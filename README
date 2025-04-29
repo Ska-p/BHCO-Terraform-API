@@ -1,0 +1,67 @@
+# BHCO-API
+
+Un wrapper Python per gestire configurazioni ETL, recupero dati da datamart e workflow di migrazione, con supporto a Dynatrace e altri servizi.
+
+## Prerequisiti
+
+- Python 3.10+ oppure Conda
+- Conda environment `bhco-api` (già presente nel progetto)
+- Account e credenziali per l’API (file di configurazione in `EnvironmentCredentials/credentials.json`)
+
+## Installazione
+
+1. **Clonare il repository**
+   ```bash
+   git clone <URL_REPO>
+   cd BHCO-API
+   ```
+
+2. **Attivare l’ambiente Conda**
+   ```bash
+   conda activate bhco-api
+   ```
+
+3. **Installare le dipendenze**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Configurazione
+
+Nel file `EnvironmentCredentials/credentials.json`, inserisci le credenziali e l’URL dell’API:
+```json
+{
+  "username": "TUO_UTENTE",
+  "password": "TUA_PASSWORD",
+  "base_url": "https://api.tuoserver.it"
+}
+```
+
+Nel file `config.json` puoi aggiungere parametri aggiuntivi di timeout o percorsi di output.
+
+## Struttura del progetto
+
+```
+BHCO-API/
+├─ API/                   # Moduli per chiamate agli endpoint
+├─ workflows/             # Flussi di lavoro orchestrati (scheduler, moduli, CSV)
+├─ EnvironmentCredentials/ # Credenziali ambiente
+├─ config.json            # Parametri globali
+├─ utils.py               # Funzioni di utilità (logging, pulizia)
+├─ main.py                # Entry point del flusso principale
+└─ requirements.txt       # Dipendenze Python
+```
+
+## Utilizzo
+
+Lancia il flusso principale:
+```bash
+python main.py
+```
+
+- Di default esegue il login, il recupero datamart e la conversione in CSV.
+- Per attivare altri workflow, decommenta le chiamate in `main.py` o usa un sistema a argomenti CLI (in futuro).
+
+## Contributi
+
+

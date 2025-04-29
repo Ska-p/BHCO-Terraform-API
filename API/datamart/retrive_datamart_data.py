@@ -59,7 +59,7 @@ def post_datamart_data(datamart_id: str = None):
     # Payload
     payload = {
         "options": {
-            "pagenum": 0,
+            "pagenum": -1,
             "pagesize": -1
         }
     }

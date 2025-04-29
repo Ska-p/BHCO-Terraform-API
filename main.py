@@ -20,8 +20,4 @@ def start():
 
 if __name__ == "__main__":
     start()
-    retrive_datamart_data.post_datamart_data(3568)
     datamart_data_to_csv.convert_datamart_json_to_csv()
-    #change_scheduler.change_scheduler()
-    #POST_etl_configuration.post_etl_configuration(186)
-    #change_module.change_module()

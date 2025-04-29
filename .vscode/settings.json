@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./API/exporting_etls_config",
+        "./API"
+    ]
+}

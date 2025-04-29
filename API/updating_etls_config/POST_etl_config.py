@@ -19,7 +19,7 @@ def patch_etl_configuration(etl_id: str = None,
     # Carica config e logging
     config = utils.load_config()
     utils.setup_logging()
-
+    credentials = utils.load_credentials()
     # 1) Recupero ETL ID, se non specificato
     if etl_id is None:
         etl_id = config.get("etl", {}).get("erid")
@@ -46,7 +46,7 @@ def patch_etl_configuration(etl_id: str = None,
     if properties_to_delete:
         payload["properties_to_delete"] = properties_to_delete
 
-    url = f"https://unicreditcapacity-itom-dev.onbmc.com/opt/api/v1/backend/etls/{etl_id}/configuration/update"
+    url = f"{credentials['base_url']}/opt/api/v1/backend/etls/{etl_id}/configuration/update"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"

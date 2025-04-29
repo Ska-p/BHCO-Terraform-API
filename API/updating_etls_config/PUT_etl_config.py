@@ -1,44 +1,107 @@
-import os
-import sys
+import requests
 import json
+import utils
 import logging
 import traceback
-import requests
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import utils
-
-def _load_config():
-    base = utils.get_base_dir()
-    with open(os.path.join(base, 'config.json')) as f:
-        return json.load(f)
-
-def _load_credentials():
-    base = utils.get_base_dir()
-    with open(os.path.join(base, 'EnvironmentCredentials', 'credentials.json')) as f:
-        return json.load(f)
-
-def put_etl_configuration(etl_id: int, payload: dict):
+def put_etl_configuration(erid: str = None, modified_body: dict = None):
     """
-    Updates configuration for a given ETL.
-    :param etl_id: ID of the ETL to update
-    :param payload: updated configuration dict
+    Updates the configuration of a specific ETL process using a PUT request.
+
+    @param erid: The ETL process ID. If not provided, it will be retrieved from `config.json`.
+    @param modified_body: A dictionary containing the ETL configuration. If not provided, it will be retrieved from `config.json`.
     """
-    cfg = _load_config()
-    creds = _load_credentials()
-    url = f"{creds['base_url'].rstrip('/')}/etls/{etl_id}/config"
+
+    # Load Configuration & Setup Logging
+    config = utils.load_config()
+    utils.setup_logging()
+    credentials = utils.load_credentials()
+
+    # Retrieve ERID
+    if erid is None:
+        erid = config.get("etl", {}).get("erid", None)
+        if erid is None:
+            logging.error("❌ ERID not found! Provide it as a parameter or add it to `config.json`.")
+            print("❌ PUT failed (check log)")
+            return
+
+    # Retrieve Bearer Token
+    token = config.get("auth", {}).get("BearerToken", None)
+    if not token:
+        logging.error("❌ No Bearer Token found! Please log in using `POST_login.py`.")
+        print("❌ PUT failed (check log)")
+        return
+
+    # Retrieve modified_body
+    if modified_body is None:
+        modified_body = config.get("etl", {}).get("modifiedBody", None)
+        if modified_body is None:
+            logging.error("❌ No `modifiedBody` found in config.json.")
+            print("❌ PUT failed (check log)")
+            return
+
+    # Ensure `modified_body` is a dictionary
+    if isinstance(modified_body, str):
+        try:
+            modified_body = json.loads(modified_body)
+        except json.JSONDecodeError:
+            logging.error("❌ `modifiedBody` must be a valid JSON object.")
+            print("❌ PUT failed (check log)")
+            return
+
+    # Ensure encryption passphrase is added
+    modified_body['encryption_passphrase'] = config.get("auth", {}).get("encryption_passphrase", None)
+    
+    url = f"{credentials['base_url']}/opt/api/v1/backend/etls/{erid}/configuration"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+
     try:
-        response = requests.put(
-            url,
-            auth=(creds['username'], creds['password']),
-            json=payload,
-            timeout=cfg.get('timeout', 30)
-        )
+        payload = json.dumps(modified_body, indent=4)
+        logging.info(f"🔹 PUT Request URL: {url}")
+        logging.info(f"🔹 PUT Payload:\n{payload}")
+    except TypeError as e:
+        logging.error(f"❌ Failed to serialize JSON: {e}")
+        print("❌ PUT failed (check log)")
+        return
+
+    try:
+        response = requests.put(url, headers=headers, data=payload)
         response.raise_for_status()
-        logging.info(f"✅ PUT ETL {etl_id} configuration updated")
-        return response.json()
+
+        # Log full response
+        logging.info(f"✅ PUT ETL configuration updated successfully for ERID: {erid}")
+        logging.info(f"✅ Response Code: {response.status_code}")
+        logging.info(f"✅ Response Body:\n{response.text}")
+
+        # Save JSON response only if present (e.g. status != 204)
+        json_path = utils.get_response_json_path("putEtl", f"erid_{erid}")
+        data = {}
+        if response.status_code != 204 and response.text.strip():
+            try:
+                data = response.json()
+            except ValueError:
+                logging.warning("No valid JSON in the response body.")
+
+        with open(json_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        print(f"✅ PUT successful {erid}")
+
     except requests.HTTPError as http_err:
-        logging.error(f"❌ HTTP error in PUT ETL config: {http_err}\nBody: {response.text}\n{traceback.format_exc()}")
-    except requests.RequestException as err:
-        logging.error(f"❌ Request failed in PUT ETL config: {err}\n{traceback.format_exc()}")
-    return None
+        error_message = f"❌ API Request Error: {http_err}"
+        try:
+            error_body = response.json()
+        except Exception:
+            error_body = response.text
+
+        logging.error(f"{error_message}\nResponse Body:\n{error_body}")
+        logging.error(f"🔹 Full Traceback:\n{traceback.format_exc()}")
+        print("❌ PUT failed (check log)")
+
+    except requests.RequestException as e:
+        error_message = f"❌ Network/API request failed: {e}"
+        logging.error(f"{error_message}\n🔹 Full Traceback:\n{traceback.format_exc()}")
+        print("❌ PUT failed (check log)")

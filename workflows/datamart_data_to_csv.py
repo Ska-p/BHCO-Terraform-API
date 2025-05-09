@@ -17,7 +17,7 @@ def convert_datamart_json_to_csv():
     retrive_datamart_data.post_datamart_data(datamart_id)
 
     json_path = utils.get_response_json_path("postDatamartData", f"datamart_{datamart_id}")
-    time.sleep(10)
+    input("Modifica nel json quello che devi modificare")
     if not os.path.exists(json_path):
         logging.error(f"❌ JSON file not found at {json_path}")
         print("❌ JSON file not found (check log)")

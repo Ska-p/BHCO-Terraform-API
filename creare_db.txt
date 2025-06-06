@@ -1,0 +1,4 @@
+(bhco-api) (base) ➜  logs git:(main) ✗ sqlite3 data.db <<EOF
+.mode csv
+.import --skip 1 Datamart_3631.csv log_data
+EOF
